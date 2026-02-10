@@ -59,7 +59,46 @@ services:
     networks:
       - intranet
 
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: url2short
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: url2short
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - intranet
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://url2short:secretpassword@postgres:5432/url2short
+    networks:
+      - intranet
+    depends_on:
+      - postgres
+
+  oathkeeper:
+    image: oryd/oathkeeper:v0.40.6
+    depends_on:
+      - kratos
+    ports:
+      - 4456:4456
+      - 4457:4457
+    command: serve -c /etc/config/oathkeeper/oathkeeper.yml
+    environment:
+      - LOG_LEVEL=debug
+    volumes:
+      - ./config:/etc/config
+    networks:
+      - intranet
+
 networks:
   intranet:
 volumes:
   kratos-sqlite:
+  postgres-data:
