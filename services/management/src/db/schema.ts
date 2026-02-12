@@ -1,4 +1,4 @@
-import { pgTable, varchar, text, jsonb, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, varchar, jsonb, timestamp, index } from "drizzle-orm/pg-core";
 
 export const alias = pgTable("alias", {
     code: varchar("code", { length: 12 }).primaryKey(),
