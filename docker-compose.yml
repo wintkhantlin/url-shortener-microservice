@@ -53,6 +53,44 @@ services:
     restart: on-failure
     ports:
       - "5433:5432"
+    networks:
+      - intranet
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - intranet
+
+  management:
+    build:
+      context: ./services/management
+    environment:
+      - PORT=8000
+      - MANAGEMENT_DATABASE_URL=postgres://management_admin:management_admin@management-db:5432/management_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      - management-db
+    networks:
+      - intranet
+
+  redirect:
+    build:
+      context: ./services/redirect
+    environment:
+      - PORT=3001
+      - REDIS_URL=redis://redis:6379
+      - MANAGEMENT_SERVICE_URL=http://management:8000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - redis
+    networks:
+      - intranet
+    
+    
 
 networks:
   intranet:
