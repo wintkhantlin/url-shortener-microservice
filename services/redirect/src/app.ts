@@ -1,8 +1,14 @@
 import { Hono } from 'hono';
 import { redis } from './redis.js';
 import pool from './db/index.js';
+import { sValidator } from "@hono/standard-validator";
+import { object, string } from "yup";
 
 export const app = new Hono();
+
+const codeSchema = object({
+  code: string().required().min(1).max(10),
+});
 
 // Health check
 app.get('/health', async (c) => {
@@ -16,7 +22,7 @@ app.get('/health', async (c) => {
 });
 
 // Redirect endpoint
-app.get('/:code', async (c) => {
+app.get('/:code', sValidator("param", codeSchema), async (c) => {
   const code = c.req.param('code');
 
   try {
