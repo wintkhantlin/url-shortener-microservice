@@ -56,7 +56,7 @@ func TestAnalyticsE2E(t *testing.T) {
 
 	event := models.AnalyticsEvent{
 		Code:      testCode,
-		IP:        "8.8.8.8", // Use a real public IP for testing location lookup
+		IP:        "8.8.8.8",
 		UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	}
 	payload, err := json.Marshal(event)
@@ -74,7 +74,7 @@ func TestAnalyticsE2E(t *testing.T) {
 	}, 15*time.Second, 500*time.Millisecond)
 
 	// 5. Verify data via API (Gin)
-	resp, err := http.Get("http://127.0.0.1:8081/analytics?code=" + testCode)
+	resp, err := http.Get("http://127.0.0.1:8081/analytics/" + testCode)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 

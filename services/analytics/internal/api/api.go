@@ -14,25 +14,22 @@ import (
 func Start(conn clickhouse.Conn, cfg *config.Config) {
 	r := gin.Default()
 
-	api := r.Group("/api/analytics")
-	{
-		api.GET("/analytics", func(c *gin.Context) {
-			code := c.Query("code")
-			if code == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
-				return
-			}
+	r.GET("/analytics/:code", func(c *gin.Context) {
+		code := c.Param("code")
+		if code == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})
+			return
+		}
 
-			resp, err := db.GetAnalytics(c.Request.Context(), conn, code)
-			if err != nil {
-				slog.Error("Failed to get analytics", "error", err, "code", code)
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get analytics"})
-				return
-			}
+		resp, err := db.GetAnalytics(c.Request.Context(), conn, code)
+		if err != nil {
+			slog.Error("Failed to get analytics", "error", err, "code", code)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get analytics"})
+			return
+		}
 
-			c.JSON(http.StatusOK, resp)
-		})
-	}
+		c.JSON(http.StatusOK, resp)
+	})
 
 	slog.Info("Analytics API (Gin) listening", "port", cfg.APIPort)
 	if err := r.Run(fmt.Sprintf(":%s", cfg.APIPort)); err != nil {
