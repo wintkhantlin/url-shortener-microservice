@@ -102,20 +102,26 @@ app.post('/aliases', sValidator("json", createSchema), sValidator("header", user
 app.patch('/aliases/:code', sValidator("json", updateSchema), sValidator("header", userHeaderSchema), async (c) => {
     try {
         const code = c.req.param('code');
-        const req = await c.req.json();
         const user_id = c.req.header("x-user-id")!;
+        const req = await c.req.json();
 
-        const updated = await updateAlias(code, user_id, {
+        // Check if alias exists and belongs to user
+        const alias = await getAliasByCode(code);
+        if (!alias || alias.user_id !== user_id) {
+            return c.json({ error: 'Alias not found' }, 404);
+        }
+
+        const result = await updateAlias(code, user_id, {
             target: req.target,
             metadata: req.metadata,
             expires_at: req.expires_at ? new Date(req.expires_at) : undefined,
         });
 
-        if (!updated) {
-            return c.json({ error: 'Alias not found or not authorized' }, 404);
+        if (!result) {
+            return c.json({ error: 'Alias not found or authorization failed' }, 404);
         }
 
-        return c.json(updated);
+        return c.json(result);
     } catch (error: any) {
         return c.json({ error: error.message || 'Error updating alias' }, 500);
     }
@@ -127,15 +133,15 @@ app.delete('/aliases/:code', sValidator("header", userHeaderSchema), async (c) =
         const code = c.req.param('code');
         const user_id = c.req.header("x-user-id")!;
 
-        const deleted = await deleteAlias(code, user_id);
-
-        if (!deleted) {
-            return c.json({ error: 'Alias not found or not authorized' }, 404);
+        const success = await deleteAlias(code, user_id);
+        
+        if (!success) {
+             return c.json({ error: 'Alias not found or authorization failed' }, 404);
         }
 
         return c.json({ message: 'Alias deleted' });
-    } catch (error: any) {
-        return c.json({ error: error.message || 'Error deleting alias' }, 500);
+    } catch (error) {
+        return c.json({ error: 'Error deleting alias' }, 500);
     }
 });
 
