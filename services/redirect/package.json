@@ -17,8 +17,10 @@
   "dependencies": {
     "@hono/node-server": "^1.19.9",
     "@hono/standard-validator": "^0.2.2",
+    "@types/pg": "^8.16.0",
     "hono": "^4.11.9",
     "ioredis": "^5.5.0",
+    "kafkajs": "^2.2.4",
     "pg": "^8.18.0",
     "yup": "^1.7.1"
   }

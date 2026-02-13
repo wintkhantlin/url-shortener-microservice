@@ -6,18 +6,20 @@ import (
 )
 
 type AnalyticsEvent struct {
-	Code       string `json:"code" validate:"required" ch:"code"`
-	Browser    string `json:"browser" validate:"required" ch:"browser"`
-	OS         string `json:"os" validate:"required" ch:"os"`
-	DeviceType string `json:"device_type" validate:"required" ch:"device_type"`
-	Country    string `json:"country" validate:"required" ch:"country"`
-	State      string `json:"state" validate:"required" ch:"state"`
+	Code      string `json:"code" validate:"required" ch:"code"`
+	IP        string `json:"ip" validate:"omitempty"`        // Not stored in CH
+	UserAgent string `json:"userAgent" validate:"omitempty"` // Not stored in CH
+	Browser   string `json:"browser" validate:"required" ch:"browser"`
+	OS        string `json:"os" validate:"required" ch:"os"`
+	Device    string `json:"device" validate:"required" ch:"device_type"`
+	Country   string `json:"country" validate:"required" ch:"country"`
+	State     string `json:"state" validate:"required" ch:"state"`
 }
 
 func (e *AnalyticsEvent) Transform() {
 	e.Browser = strings.ToLower(e.Browser)
 	e.OS = strings.ToLower(e.OS)
-	e.DeviceType = strings.ToLower(e.DeviceType)
+	e.Device = strings.ToLower(e.Device)
 	e.Country = strings.ToLower(e.Country)
 	e.State = strings.ToLower(e.State)
 }

@@ -27,7 +27,7 @@ func Insert(ctx context.Context, conn clickhouse.Conn, event models.AnalyticsEve
 	return conn.Exec(ctx, `
 		INSERT INTO analytics (code, browser, os, device_type, country, state)
 		VALUES (?, ?, ?, ?, ?, ?)
-	`, event.Code, event.Browser, event.OS, event.DeviceType, event.Country, event.State)
+	`, event.Code, event.Browser, event.OS, event.Device, event.Country, event.State)
 }
 
 func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*models.AnalyticsResponse, error) {

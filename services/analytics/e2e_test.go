@@ -46,12 +46,9 @@ func TestAnalyticsE2E(t *testing.T) {
 	defer writer.Close()
 
 	event := models.AnalyticsEvent{
-		Code:       testCode,
-		Browser:    "CHROME",
-		OS:         "MACOS",
-		DeviceType: "DESKTOP",
-		Country:    "US",
-		State:      "CALIFORNIA",
+		Code:      testCode,
+		IP:        "8.8.8.8", // Use a real public IP for testing location lookup
+		UserAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 	}
 	payload, err := json.Marshal(event)
 	require.NoError(t, err)
