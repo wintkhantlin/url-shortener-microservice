@@ -38,7 +38,7 @@ services:
       - CSRF_COOKIE_NAME=ory_kratos_csrf
       - CSRF_COOKIE_SECRET=changeme-another-secret-67890
     ports:
-      - "3000:3000"
+      - "3002:3000"
     networks:
       - intranet
 
@@ -143,10 +143,12 @@ services:
     build:
       context: ./services/management
     environment:
-      - DATABASE_URL=postgres://management_admin:management_admin@management-db:5432/management_db
+      - MANAGEMENT_DATABASE_URL=postgres://management_admin:management_admin@management-db:5432/management_db
       - PORT=8001
     depends_on:
       - management-db
+    ports:
+      - "8001:8001"
     networks:
       - intranet
 
@@ -155,13 +157,15 @@ services:
       context: ./services/redirect
     environment:
       - PORT=3001
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=broker:9092
       - REDIS_URL=redis://redis:6379
-      - DATABASE_URL=postgres://management_admin:management_admin@management-db-replica:5432/management_db
+      - REPLICA_DATABASE_URL=postgres://management_admin:management_admin@management-db-replica:5432/management_db
     depends_on:
-      - kafka
+      - broker
       - redis
       - management-db-replica
+    ports:
+      - "3001:3001"
     networks:
       - intranet
 
@@ -170,11 +174,27 @@ services:
       context: ./services/analytics
     environment:
       - CLICKHOUSE_ADDR=clickhouse:9000
-      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_BROKERS=broker:9092
       - API_PORT=8080
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=default
+      - CLICKHOUSE_DB=analytics_db
     depends_on:
       - clickhouse
-      - kafka
+      - broker
+    ports:
+      - "8080:8080"
+    networks:
+      - intranet
+
+  web-ui:
+    build:
+      context: ./web-ui
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4455/api
+      - VITE_AUTH_URL=http://localhost:4455/auth
+    ports:
+      - "3000:3000"
     networks:
       - intranet
 
@@ -187,7 +207,7 @@ services:
       - "4456:4456" # API
     volumes:
       - ./config/oathkeeper:/etc/config/oathkeeper
-    command: serve -c /etc/config/oathkeeper/oathkeeper.yml --access-rules /etc/config/oathkeeper/rules.json
+    command: serve -c /etc/config/oathkeeper/oathkeeper.yml
     environment:
       - KRATOS_PUBLIC_URL=http://kratos:4433
     networks:
