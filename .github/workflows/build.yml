@@ -40,4 +40,4 @@ jobs:
 
       - name: Build Check
         working-directory: services/redirect
-        run: bun build ./src/index.ts --outdir ./dist
+        run: bun build ./src/index.ts --outdir ./dist --target bun
