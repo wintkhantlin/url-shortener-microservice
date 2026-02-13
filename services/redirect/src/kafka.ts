@@ -1,6 +1,6 @@
 import { Kafka, Partitioners } from 'kafkajs';
 
-const brokers = process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(',') : ['localhost:9094'];
+const brokers = process.env.KAFKA_BROKERS ? process.env.KAFKA_BROKERS.split(',') : ['broker:9092'];
 const topic = process.env.KAFKA_TOPIC || 'analytics-event';
 
 const kafka = new Kafka({

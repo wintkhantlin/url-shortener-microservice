@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { logger as honoLogger } from 'hono/logger';
 import { redis } from './redis.js';
 import pool from './db/index.js';
 import { sValidator } from "@hono/standard-validator";
@@ -7,6 +8,7 @@ import { sendAnalyticsEvent } from './kafka.js';
 import logger from './logger.js';
 
 export const app = new Hono();
+app.use('*', honoLogger());
 
 const codeSchema = object({
   code: string().required().min(1).max(10),
@@ -23,7 +25,6 @@ app.get('/health', async (c) => {
   }
 });
 
-// Redirect endpoint
 app.get('/:code', sValidator("param", codeSchema), async (c) => {
   const code = c.req.param('code');
   const ip = c.req.header('x-forwarded-for') || '127.0.0.1';
