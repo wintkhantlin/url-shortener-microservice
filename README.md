@@ -2,7 +2,7 @@
 
 A high-performance URL shortener system built with a microservices architecture, featuring real-time analytics and event-driven data processing.
 
-## 🚀 Services Overview
+## Services Overview
 
 | Service | Language/Stack | Port | Description |
 | :--- | :--- | :--- | :--- |
@@ -14,14 +14,14 @@ A high-performance URL shortener system built with a microservices architecture,
 | **ClickHouse** | OLAP Database | 8123/9000 | Columnar database optimized for real-time analytical queries. |
 | **Redis** | Cache | 6379 | Fast lookup for URL redirections and management data. |
 
-## 🛠 Features
+## Features
 
 - **Decoupled Architecture**: Redirection and analytics are separated via Kafka to ensure zero latency impact on users.
 - **Real-time Summaries**: Analytics service provides hourly timelines and dimension breakdowns (Browser, OS, Country).
 - **Validation**: Strict schema validation using Yup (TS) and go-playground/validator (Go).
 - **E2E Testing**: Automated end-to-end testing for the analytics pipeline.
 
-## 🏗 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Docker & Docker Compose
@@ -42,7 +42,7 @@ A high-performance URL shortener system built with a microservices architecture,
    curl "http://localhost:8080/analytics?code=YOUR_CODE"
    ```
 
-## 📊 Analytics Schema
+## Analytics Schema
 The analytics data is stored in ClickHouse using the `MergeTree` engine for high-performance insertions and queries.
 
 | Column | Type | Description |
