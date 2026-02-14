@@ -14,7 +14,7 @@ import (
 func Start(conn clickhouse.Conn, cfg *config.Config) {
 	r := gin.Default()
 
-	r.GET("/analytics/:code", func(c *gin.Context) {
+	r.GET("/:code", func(c *gin.Context) {
 		code := c.Param("code")
 		if code == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "code is required"})

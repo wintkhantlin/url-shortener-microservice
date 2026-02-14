@@ -2,42 +2,46 @@
   {
     "id": "management-api",
     "upstream": {
-      "url": "http://management:8001"
+      "url": "http://management:8001",
+      "strip_path": "/api/management"
     },
     "match": {
       "url": "http://localhost:4455/api/management/<**>",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "OPTIONS"
+      ]
     },
     "authenticators": [
       {
-        "handler": "cookie_session"
+        "handler": "anonymous"
       }
     ],
     "authorizer": {
-      "handler": "allow",
-      "config": {}
+      "handler": "allow"
     },
     "mutators": [
       {
-        "handler": "header",
-        "config": {}
-      }
-    ],
-    "rewrite": [
-      {
-        "reg_exp": "/api/management/(.*)",
-        "replace": "/$1"
+        "handler": "noop"
       }
     ]
   },
   {
     "id": "analytics-api",
     "upstream": {
-      "url": "http://analytics:8080"
+      "url": "http://analytics:8080",
+      "strip_path": "/api/analytics"
     },
     "match": {
       "url": "http://localhost:4455/api/analytics/<**>",
-      "methods": ["GET"]
+      "methods": [
+        "GET",
+        "OPTIONS"
+      ]
     },
     "authenticators": [
       {
@@ -45,30 +49,30 @@
       }
     ],
     "authorizer": {
-      "handler": "allow",
-      "config": {}
+      "handler": "allow"
     },
     "mutators": [
       {
-        "handler": "header",
-        "config": {}
-      }
-    ],
-    "rewrite": [
-      {
-        "reg_exp": "/api/analytics/(.*)",
-        "replace": "/$1"
+        "handler": "noop"
       }
     ]
   },
   {
     "id": "kratos-public",
     "upstream": {
-      "url": "http://kratos:4433"
+      "url": "http://kratos:4433",
+      "strip_path": "/auth"
     },
     "match": {
       "url": "http://localhost:4455/auth/<**>",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+      "methods": [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "PATCH",
+        "OPTIONS"
+      ]
     },
     "authenticators": [
       {
@@ -76,19 +80,11 @@
       }
     ],
     "authorizer": {
-      "handler": "allow",
-      "config": {}
+      "handler": "allow"
     },
     "mutators": [
       {
-        "handler": "noop",
-        "config": {}
-      }
-    ],
-    "rewrite": [
-      {
-        "reg_exp": "/auth/(.*)",
-        "replace": "/$1"
+        "handler": "noop"
       }
     ]
   }

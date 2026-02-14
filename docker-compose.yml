@@ -206,7 +206,8 @@ services:
       - "4455:4455" # Proxy
       - "4456:4456" # API
     volumes:
-      - ./config/oathkeeper:/etc/config/oathkeeper
+      - ./config/oathkeeper/rules.json:/etc/config/oathkeeper/rules.json
+      - ./config/oathkeeper/oathkeeper.yml:/etc/config/oathkeeper/oathkeeper.yml
     command: serve -c /etc/config/oathkeeper/oathkeeper.yml
     environment:
       - KRATOS_PUBLIC_URL=http://kratos:4433
