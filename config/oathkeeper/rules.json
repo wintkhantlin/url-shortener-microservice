@@ -18,7 +18,7 @@
     },
     "authenticators": [
       {
-        "handler": "anonymous"
+        "handler": "cookie_session"
       }
     ],
     "authorizer": {
@@ -26,7 +26,7 @@
     },
     "mutators": [
       {
-        "handler": "noop"
+        "handler": "header"
       }
     ]
   },
