@@ -9,6 +9,7 @@ type AnalyticsEvent struct {
 	Code      string `json:"code" validate:"required" ch:"code"`
 	IP        string `json:"ip" validate:"omitempty"`        // Not stored in CH
 	UserAgent string `json:"userAgent" validate:"omitempty"` // Not stored in CH
+	Referer   string `json:"referer" validate:"omitempty" ch:"referer"`
 	Browser   string `json:"browser" validate:"required" ch:"browser"`
 	OS        string `json:"os" validate:"required" ch:"os"`
 	Device    string `json:"device" validate:"required" ch:"device_type"`
@@ -22,6 +23,7 @@ func (e *AnalyticsEvent) Transform() {
 	e.Device = strings.ToLower(e.Device)
 	e.Country = strings.ToLower(e.Country)
 	e.State = strings.ToLower(e.State)
+	// Normalize referer if needed, e.g., extract domain
 }
 
 type TimelineEntry struct {
@@ -41,4 +43,5 @@ type AnalyticsResponse struct {
 	OS          []DimensionSummary `json:"os"`
 	Devices     []DimensionSummary `json:"devices"`
 	Countries   []DimensionSummary `json:"countries"`
+	Referrers   []DimensionSummary `json:"referrers"`
 }

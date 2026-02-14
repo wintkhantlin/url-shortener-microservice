@@ -35,9 +35,33 @@ func Connect(cfg *config.Config) (clickhouse.Conn, error) {
 
 func Insert(ctx context.Context, conn clickhouse.Conn, event models.AnalyticsEvent) error {
 	return conn.Exec(ctx, `
-		INSERT INTO analytics (code, browser, os, device_type, country, state)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, event.Code, event.Browser, event.OS, event.Device, event.Country, event.State)
+		INSERT INTO analytics (code, browser, os, device_type, country, state, referer)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, event.Code, event.Browser, event.OS, event.Device, event.Country, event.State, event.Referer)
+}
+
+func InsertBatch(ctx context.Context, conn clickhouse.Conn, events []models.AnalyticsEvent) error {
+	batch, err := conn.PrepareBatch(ctx, "INSERT INTO analytics (code, browser, os, device_type, country, state, referer)")
+	if err != nil {
+		return err
+	}
+	
+	for _, event := range events {
+		err := batch.Append(
+			event.Code,
+			event.Browser,
+			event.OS,
+			event.Device,
+			event.Country,
+			event.State,
+			event.Referer,
+		)
+		if err != nil {
+			return err
+		}
+	}
+	
+	return batch.Send()
 }
 
 func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*models.AnalyticsResponse, error) {
@@ -91,6 +115,15 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	err = conn.Select(ctx, &resp.Countries, `
 		SELECT country as name, count() as count 
 		FROM analytics WHERE code = ? GROUP BY name ORDER BY count DESC
+	`, code)
+	if err != nil {
+		return nil, err
+	}
+
+	// 7. Referrers
+	err = conn.Select(ctx, &resp.Referrers, `
+		SELECT domain(referer) as name, count() as count 
+		FROM analytics WHERE code = ? AND referer != '' GROUP BY name ORDER BY count DESC
 	`, code)
 	if err != nil {
 		return nil, err
