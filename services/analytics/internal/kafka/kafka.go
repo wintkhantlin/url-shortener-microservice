@@ -3,60 +3,19 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/go-playground/validator/v10"
 	"github.com/segmentio/kafka-go"
-	"github.com/ua-parser/uap-go/uaparser"
 	"github.com/wintkhantlin/url2short-analytics/internal/config"
 	"github.com/wintkhantlin/url2short-analytics/internal/db"
+	"github.com/wintkhantlin/url2short-analytics/internal/geoip"
 	"github.com/wintkhantlin/url2short-analytics/internal/models"
+	"github.com/wintkhantlin/url2short-analytics/internal/parser"
 )
-
-var uaParser *uaparser.Parser
-
-func init() {
-	uaParser = uaparser.NewFromSaved()
-}
-
-type IPLocation struct {
-	Status  string `json:"status"`
-	Country string `json:"country"`
-	Region  string `json:"regionName"`
-}
-
-func getLocation(ctx context.Context, ip string) (string, string) {
-	if ip == "127.0.0.1" || ip == "localhost" || ip == "" {
-		return "internal", "internal"
-	}
-
-	client := &http.Client{Timeout: 2 * time.Second}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://ip-api.com/json/%s", ip), nil)
-	if err != nil {
-		return "unknown", "unknown"
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "unknown", "unknown"
-	}
-	defer resp.Body.Close()
-
-	var loc IPLocation
-	if err := json.NewDecoder(resp.Body).Decode(&loc); err != nil {
-		return "unknown", "unknown"
-	}
-
-	if loc.Status != "success" {
-		return "unknown", "unknown"
-	}
-
-	return loc.Country, loc.Region
-}
 
 func StartConsumer(ctx context.Context, conn clickhouse.Conn, validate *validator.Validate, cfg *config.Config) {
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -68,15 +27,44 @@ func StartConsumer(ctx context.Context, conn clickhouse.Conn, validate *validato
 	defer reader.Close()
 
 	slog.Info("Starting to read analytics events", "topic", cfg.KafkaTopic, "group", cfg.KafkaGroupID)
+
+	// Batch processing configuration
+	const batchSize = 5000
+	const batchTimeout = 2 * time.Second
+
+	batch := make([]models.AnalyticsEvent, 0, batchSize)
+	ticker := time.NewTicker(batchTimeout)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			slog.Info("Shutting down Kafka consumer...")
+			if len(batch) > 0 {
+				if err := db.InsertBatch(context.Background(), conn, batch); err != nil {
+					slog.Error("Error inserting final batch into ClickHouse", "error", err)
+				}
+			}
 			return
+		case <-ticker.C:
+			if len(batch) > 0 {
+				if err := db.InsertBatch(ctx, conn, batch); err != nil {
+					slog.Error("Error inserting batch into ClickHouse", "error", err)
+				} else {
+					slog.Info("Successfully inserted batch", "size", len(batch))
+				}
+				batch = batch[:0]
+			}
 		default:
-			msg, err := reader.ReadMessage(ctx)
+			// Non-blocking read with short timeout to allow ticker to fire
+			readCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+			msg, err := reader.ReadMessage(readCtx)
+			cancel()
+
 			if err != nil {
-				slog.Error("Error reading message", "error", err)
+				if err != context.DeadlineExceeded && !errors.Is(err, context.DeadlineExceeded) {
+					slog.Error("Error reading message", "error", err)
+				}
 				continue
 			}
 
@@ -88,18 +76,18 @@ func StartConsumer(ctx context.Context, conn clickhouse.Conn, validate *validato
 
 			// 1. Parse User-Agent if present
 			if event.UserAgent != "" {
-				client := uaParser.Parse(event.UserAgent)
-				event.Browser = client.UserAgent.Family
-				event.OS = client.Os.Family
-				event.Device = client.Device.Family
+				info := parser.ParseUserAgent(event.UserAgent)
+				event.Browser = info.Browser
+				event.OS = info.OS
+				event.Device = info.Device
 			}
 
-			// 2. Parse IP if present
+			// 2. Parse IP if present (using shared GeoIP)
 			if event.IP != "" {
-				event.Country, event.State = getLocation(ctx, event.IP)
+				event.Country, event.State = geoip.GetLocation(event.IP)
 			}
 
-			// Fill defaults for missing dimensions if parsing failed or was skipped
+			// Fill defaults
 			if event.Browser == "" {
 				event.Browser = "unknown"
 			}
@@ -121,15 +109,17 @@ func StartConsumer(ctx context.Context, conn clickhouse.Conn, validate *validato
 				continue
 			}
 
-			// Transform fields to lowercase except code
 			event.Transform()
+			batch = append(batch, event)
 
-			if err := db.Insert(ctx, conn, event); err != nil {
-				slog.Error("Error inserting into ClickHouse", "error", err)
-				continue
+			if len(batch) >= batchSize {
+				if err := db.InsertBatch(ctx, conn, batch); err != nil {
+					slog.Error("Error inserting batch into ClickHouse", "error", err)
+				} else {
+					slog.Info("Successfully inserted batch", "size", len(batch))
+				}
+				batch = batch[:0]
 			}
-
-			slog.Info("Successfully inserted event", "code", event.Code)
 		}
 	}
 }

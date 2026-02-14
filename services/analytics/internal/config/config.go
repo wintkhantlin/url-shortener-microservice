@@ -14,6 +14,7 @@ type Config struct {
 	KafkaTopic         string
 	KafkaGroupID       string
 	APIPort            string
+	ManagementURL      string
 }
 
 func Load() *Config {
@@ -26,6 +27,7 @@ func Load() *Config {
 		KafkaTopic:         getEnv("KAFKA_TOPIC", "analytics-event"),
 		KafkaGroupID:       getEnv("KAFKA_GROUP_ID", "analytics-group"),
 		APIPort:            getEnv("API_PORT", "8080"),
+		ManagementURL:      getEnv("MANAGEMENT_URL", "http://management:8001"),
 	}
 }
 

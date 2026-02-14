@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -20,12 +22,41 @@ import (
 )
 
 func TestAnalyticsE2E(t *testing.T) {
+	// Skip if running in short mode
+	if testing.Short() {
+		t.Skip("Skipping E2E test in short mode")
+	}
+
 	cfg := config.Load()
+	
+	// Override config for local testing if env vars are not set
+	if os.Getenv("CLICKHOUSE_ADDR") == "" {
+		cfg.ClickHouseAddr = "localhost:9000"
+	}
+	if os.Getenv("KAFKA_BROKERS") == "" {
+		cfg.KafkaBrokers = []string{"localhost:9094"}
+	}
+	
 	cfg.APIPort = "8081" // Use a different port for tests
+
+	// Mock Management Service
+	mockMgmt := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-User-Id") == "test-user" {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"code":"test","user_id":"test-user"}`))
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer mockMgmt.Close()
+	cfg.ManagementURL = mockMgmt.URL
 
 	// 1. Connect to ClickHouse
 	conn, err := db.Connect(cfg)
-	require.NoError(t, err)
+	if err != nil {
+		t.Logf("Skipping E2E test: ClickHouse not available: %v", err)
+		t.SkipNow()
+	}
 
 	validate := validator.New()
 
@@ -74,7 +105,12 @@ func TestAnalyticsE2E(t *testing.T) {
 	}, 15*time.Second, 500*time.Millisecond)
 
 	// 5. Verify data via API (Gin)
-	resp, err := http.Get("http://127.0.0.1:8081/analytics/" + testCode)
+	req, err := http.NewRequest("GET", "http://127.0.0.1:8081/"+testCode, nil)
+	require.NoError(t, err)
+	req.Header.Set("X-User-Id", "test-user")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
 

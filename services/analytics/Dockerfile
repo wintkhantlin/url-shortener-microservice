@@ -9,6 +9,13 @@ COPY . .
 
 RUN go build -o analytics main.go
 
+RUN wget -O GeoLite2-City.mmdb https://git.io/GeoLite2-City.mmdb
+
+RUN mkdir -p geo2ip
+
+RUN cp GeoLite2-City.mmdb geo2ip/GeoLite2-City.mmdb
+
+
 FROM alpine:latest
 
 WORKDIR /app
