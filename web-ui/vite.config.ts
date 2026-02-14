@@ -22,5 +22,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  envPrefix: "APP_"
+  server: {
+    port: 3000
+  },
+  envPrefix: "APP_",
 })
