@@ -1,6 +1,24 @@
 serve:
   proxy:
     port: 4455 # Port for incoming requests
+    cors:
+      enabled: true
+      allowed_origins:
+        - http://localhost:3000
+      allowed_methods:
+        - POST
+        - GET
+        - PUT
+        - PATCH
+        - DELETE
+      allowed_headers:
+        - Authorization
+        - Content-Type
+        - X-User-ID
+      exposed_headers:
+        - Content-Type
+      allow_credentials: true
+      debug: true
   api:
     port: 4456 # Port for management API
 
