@@ -5,7 +5,7 @@ import uuid
 
 URL = "http://localhost:3001/hiFF1u"
 CONCURRENCY = 200
-REQUESTS = 10000
+REQUESTS = 1000
 
 UAS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122.0 Safari/537.36",
