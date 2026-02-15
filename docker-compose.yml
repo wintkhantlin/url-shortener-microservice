@@ -169,7 +169,7 @@ services:
       - broker
     deploy:
       mode: replicated
-      replicas: 2
+      replicas: 10
     networks:
       - intranet
 
