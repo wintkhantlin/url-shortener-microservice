@@ -53,7 +53,7 @@
     },
     "mutators": [
       {
-        "handler": "noop"
+        "handler": "header"
       }
     ]
   },

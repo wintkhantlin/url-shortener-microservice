@@ -130,8 +130,10 @@ services:
     environment:
       - MANAGEMENT_DATABASE_URL=postgres://management_admin:management_admin@management-db:5432/management_db
       - PORT=8001
+      - KAFKA_BROKER=broker:9092
     depends_on:
       - management-db
+      - broker
     ports:
       - "8001:8001"
     networks:
@@ -156,7 +158,8 @@ services:
 
   analytics:
     build:
-      context: ./services/analytics
+      context: .
+      dockerfile: services/analytics/Dockerfile
     environment:
       - CLICKHOUSE_ADDR=clickhouse:9000
       - KAFKA_BROKERS=broker:9092
@@ -164,12 +167,36 @@ services:
       - CLICKHOUSE_USER=default
       - CLICKHOUSE_PASSWORD=default
       - CLICKHOUSE_DB=analytics_db
+      - IP2GEO_ADDR=ip2geo:50051
+      - USER_AGENT_ADDR=useragent:50052
     depends_on:
       - clickhouse
       - broker
+      - ip2geo
+      - useragent
     deploy:
       mode: replicated
       replicas: 10
+    networks:
+      - intranet
+
+  ip2geo:
+    build:
+      context: ./services/ip2geo
+    environment:
+      - PORT=50051
+    ports:
+      - "50051:50051"
+    networks:
+      - intranet
+
+  useragent:
+    build:
+      context: ./services/user-agent
+    environment:
+      - PORT=50052
+    ports:
+      - "50052:50052"
     networks:
       - intranet
 
@@ -197,6 +224,34 @@ services:
     command: serve -c /etc/config/oathkeeper/oathkeeper.yml
     environment:
       - KRATOS_PUBLIC_URL=http://kratos:4433
+    networks:
+      - intranet
+
+  security:
+    build:
+      context: ./services/security
+    environment:
+      - KAFKA_BROKERS=broker:9092
+      - KAFKA_INPUT_TOPIC=alias.created
+      - KAFKA_OUTPUT_TOPIC=alias.checked
+      - KAFKA_GROUP_ID=security-worker
+      - CONCURRENCY_LIMIT=20
+    restart: on-failure
+    depends_on:
+      - broker
+    networks:
+      - intranet
+
+  management-worker:
+    build:
+      context: ./services/management
+    environment:
+      - MANAGEMENT_DATABASE_URL=postgres://management_admin:management_admin@management-db:5432/management_db
+      - KAFKA_BROKER=broker:9092
+    command: bun run worker
+    depends_on:
+      - management-db
+      - broker
     networks:
       - intranet
 
