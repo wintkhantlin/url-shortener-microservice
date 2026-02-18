@@ -1,0 +1,1 @@
+ALTER TABLE "alias" ADD COLUMN "should_warn" boolean DEFAULT false;
