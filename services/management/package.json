@@ -11,7 +11,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "migrate": "drizzle-kit migrate"
+    "worker": "bun src/worker.ts",
+    "db:migrate": "bun src/db/migrate.ts"
   },
   "type": "module",
   "dependencies": {
@@ -19,6 +20,7 @@
     "@hono/standard-validator": "^0.2.2",
     "drizzle-orm": "^0.45.1",
     "hono": "^4.11.9",
+    "kafkajs": "^2.2.4",
     "pg": "^8.18.0",
     "yup": "^1.7.1"
   }
