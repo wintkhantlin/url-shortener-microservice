@@ -3,7 +3,7 @@ import { logger } from "hono/logger";
 import db from "./db";
 import { getAliasesByUserId, getAliasByCode } from "./query";
 import { sValidator } from "@hono/standard-validator";
-import { object, string, date } from "yup";
+import { object, string, date, boolean } from "yup";
 import { createAlias, updateAlias, deleteAlias } from "./command";
 
 const app = new Hono();
@@ -14,12 +14,14 @@ const createSchema = object({
     target: string().url().required().max(2048),
     metadata: object().optional(),
     expires_at: date().optional(),
+    is_active: boolean().default(true),
 });
 
 const updateSchema = object({
     target: string().url().optional().max(2048),
     metadata: object().optional(),
     expires_at: date().optional(),
+    is_active: boolean().optional(),
 });
 
 const userHeaderSchema = object({
