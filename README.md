@@ -1,5 +1,7 @@
 # Welcome to URL2Short
 
+![System Design](docs/images/system-design.png)
+
 This is URL2Short, a high-performance, scalable URL shortener built to handle high traffic and provide real-time insights. Think of it as your own personal Bitly, but open-source and built with modern tech.
 
 ## What is this?
