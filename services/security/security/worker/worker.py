@@ -4,7 +4,6 @@ import logging
 import os
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
-# Import PhishingDetector from shared module
 try:
     from security.model import PhishingDetector
 except ImportError:
@@ -13,14 +12,11 @@ except ImportError:
     sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
     from security.model import PhishingDetector
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize detector
 detector = PhishingDetector()
 
-# Configuration
 KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "127.0.0.1:9094")
 INPUT_TOPIC = os.getenv("KAFKA_INPUT_TOPIC", "alias.created")
 OUTPUT_TOPIC = os.getenv("KAFKA_OUTPUT_TOPIC", "alias.checked")
@@ -28,12 +24,8 @@ GROUP_ID = os.getenv("KAFKA_GROUP_ID", "alias-created-listener")
 CONCURRENCY_LIMIT = int(os.getenv("CONCURRENCY_LIMIT", 20))
 
 async def process_message(msg, producer, loop, semaphore):
-    """
-    Process a single Kafka message with concurrency control.
-    """
     async with semaphore:
         try:
-            # logger.debug("Processing message offset=%s", msg.offset)
             payload = msg.value if isinstance(msg.value, dict) else {}
             url = payload.get("target") or payload.get("url") or payload.get("original_url")
             code = payload.get("code")
@@ -42,13 +34,11 @@ async def process_message(msg, producer, loop, semaphore):
                 logger.warning("Event missing URL-like field: %s", payload)
                 return
 
-            # Perform check
             score = 0.0
             is_safe = True
             
             if detector.model is not None:
                 try:
-                    # Run prediction in executor to avoid blocking event loop
                     score = await loop.run_in_executor(None, detector.get_phishing_score, url)
                     is_safe = score < 0.5
                 except Exception as e:
@@ -59,7 +49,6 @@ async def process_message(msg, producer, loop, semaphore):
                 code, is_safe, score, url
             )
             
-            # Produce result
             result = {
                 "code": code,
                 "url": url,
@@ -87,42 +76,33 @@ async def listen_alias_created():
         bootstrap_servers=KAFKA_BROKERS
     )
     
-    # Wait for Kafka to be ready (simple retry loop could be added here in production)
-    try:
-        await consumer.start()
-        await producer.start()
-    except Exception as e:
-        logger.error(f"Failed to connect to Kafka at {KAFKA_BROKERS}: {e}")
-        return
+    retries = 0
+    max_retries = 30
+    while retries < max_retries:
+        try:
+            logger.info(f"Connecting to Kafka at {KAFKA_BROKERS} (attempt {retries+1}/{max_retries})...")
+            await consumer.start()
+            await producer.start()
+            logger.info("Successfully connected to Kafka")
+            break
+        except Exception as e:
+            logger.warning(f"Failed to connect to Kafka: {e}. Retrying in 5 seconds...")
+            retries += 1
+            await asyncio.sleep(5)
+            
+            if retries >= max_retries:
+                logger.error(f"Failed to connect to Kafka at {KAFKA_BROKERS} after {max_retries} attempts: {e}")
+                return
     
     loop = asyncio.get_running_loop()
     semaphore = asyncio.Semaphore(CONCURRENCY_LIMIT)
     
-    tasks = set()
-    
     try:
-        logger.info(f"Worker started. Listening on '{INPUT_TOPIC}' with concurrency={CONCURRENCY_LIMIT}...")
         async for msg in consumer:
-            # Create a task for each message
-            task = asyncio.create_task(process_message(msg, producer, loop, semaphore))
-            tasks.add(task)
-            
-            # Clean up finished tasks
-            task.add_done_callback(tasks.discard)
-            
-            # Optional: Backpressure if too many pending tasks
-            if len(tasks) > CONCURRENCY_LIMIT * 2:
-                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-                
-    except Exception as e:
-        logger.error(f"Error in consumer loop: {e}")
+            asyncio.create_task(process_message(msg, producer, loop, semaphore))
     finally:
-        # Wait for remaining tasks
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
-            
         await consumer.stop()
         await producer.stop()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(listen_alias_created())

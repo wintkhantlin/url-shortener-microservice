@@ -4,13 +4,12 @@ import numpy as np
 import joblib
 import tldextract
 from urllib.parse import urlparse
-from confluent_kafka import Consumer, Producer, KafkaError
+from aiokafka import Consumer, Producer, KafkaError
 from pathlib import Path
 import re
 import math
 import requests
 
-# --- Feature Extraction (Must match train_live_model.py logic) ---
 def extract_features_live(url):
     url = str(url).strip()
     features = []
