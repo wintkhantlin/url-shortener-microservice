@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package ip2geo;
+option go_package = "./../gen";
+
+service Ip2GeoService {
+  rpc Lookup(IpRequest) returns (GeoResponse);
+}
+
+message IpRequest {
+  string ip = 1;
+}
+
+message GeoResponse {
+    string country = 1;
+    string state = 2;
+}
