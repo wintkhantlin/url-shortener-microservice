@@ -58,7 +58,39 @@ func Start(conn clickhouse.Conn, cfg *config.Config) {
 			return
 		}
 
-		analyticsResp, err := db.GetAnalytics(c.Request.Context(), conn, code)
+		// Parse query params
+		startStr := c.Query("start")
+		endStr := c.Query("end")
+		interval := c.Query("interval")
+
+		now := time.Now()
+		var start, end time.Time
+
+		if endStr != "" {
+			end, err = time.Parse(time.RFC3339, endStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end time format (RFC3339 required)"})
+				return
+			}
+		} else {
+			end = now
+		}
+
+		if startStr != "" {
+			start, err = time.Parse(time.RFC3339, startStr)
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start time format (RFC3339 required)"})
+				return
+			}
+		} else {
+			start = end.Add(-24 * time.Hour)
+		}
+
+		if interval == "" {
+			interval = "hour"
+		}
+
+		analyticsResp, err := db.GetAnalytics(c.Request.Context(), conn, code, start, end, interval)
 		if err != nil {
 			slog.Error("Failed to get analytics", "error", err, "code", code)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get analytics"})

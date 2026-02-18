@@ -1,13 +1,39 @@
 package parser
 
 import (
-	"github.com/ua-parser/uap-go/uaparser"
+	"context"
+	"log/slog"
+	"sync"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/wintkhantlin/url2short-useragent/gen"
 )
 
-var parser *uaparser.Parser
+var (
+	client pb.UserAgentServiceClient
+	conn   *grpc.ClientConn
+	once   sync.Once
+)
 
-func init() {
-	parser = uaparser.NewFromSaved()
+// Init initializes the UserAgent gRPC client.
+func Init(addr string) error {
+	var err error
+	once.Do(func() {
+		slog.Info("Connecting to UserAgent service", "addr", addr)
+
+		// Create a connection to the server
+		conn, err = grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			slog.Error("Failed to connect to UserAgent service", "error", err, "addr", addr)
+			return
+		}
+
+		client = pb.NewUserAgentServiceClient(conn)
+	})
+	return err
 }
 
 type UserAgentInfo struct {
@@ -26,17 +52,37 @@ func ParseUserAgent(userAgent string) UserAgentInfo {
 		}
 	}
 
-	client := parser.Parse(userAgent)
-	
-	info := UserAgentInfo{
-		Browser: client.UserAgent.Family,
-		OS:      client.Os.Family,
-		Device:  client.Device.Family,
+	if client == nil {
+		return UserAgentInfo{
+			Browser: "unknown",
+			OS:      "unknown",
+			Device:  "unknown",
+		}
 	}
 
-	if info.Browser == "" { info.Browser = "unknown" }
-	if info.OS == "" { info.OS = "unknown" }
-	if info.Device == "" { info.Device = "unknown" }
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-	return info
+	resp, err := client.Parse(ctx, &pb.UserAgentRequest{UserAgent: userAgent})
+	if err != nil {
+		slog.Debug("Failed to parse user agent", "user_agent", userAgent, "error", err)
+		return UserAgentInfo{
+			Browser: "unknown",
+			OS:      "unknown",
+			Device:  "unknown",
+		}
+	}
+
+	return UserAgentInfo{
+		Browser: resp.Browser,
+		OS:      resp.Os,
+		Device:  resp.Device,
+	}
+}
+
+// Close closes the gRPC connection.
+func Close() {
+	if conn != nil {
+		conn.Close()
+	}
 }

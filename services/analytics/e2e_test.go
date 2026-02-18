@@ -100,7 +100,7 @@ func TestAnalyticsE2E(t *testing.T) {
 
 	// 4. Wait for processing (polling ClickHouse)
 	require.Eventually(t, func() bool {
-		summary, err := db.GetAnalytics(context.Background(), conn, testCode)
+		summary, err := db.GetAnalytics(context.Background(), conn, testCode, time.Now().Add(-24*time.Hour), time.Now(), "hour")
 		return err == nil && summary.TotalClicks > 0
 	}, 15*time.Second, 500*time.Millisecond)
 

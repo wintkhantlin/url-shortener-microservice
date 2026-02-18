@@ -2,25 +2,28 @@ FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+# Copy the dependency modules first
+COPY services/ip2geo /app/services/ip2geo
+COPY services/user-agent /app/services/user-agent
+
+# Set workdir to where we want to build
+WORKDIR /app/services/analytics
+
+# Copy main module files
+COPY services/analytics/go.mod services/analytics/go.sum ./
+
 RUN go mod download
 
-COPY . .
+# Copy the rest of the source code
+COPY services/analytics .
 
 RUN go build -o analytics main.go
-
-RUN wget -O GeoLite2-City.mmdb https://git.io/GeoLite2-City.mmdb
-
-RUN mkdir -p geo2ip
-
-RUN cp GeoLite2-City.mmdb geo2ip/GeoLite2-City.mmdb
-
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/analytics .
+COPY --from=builder /app/services/analytics/analytics .
 
 EXPOSE 8080
 

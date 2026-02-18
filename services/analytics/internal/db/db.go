@@ -64,22 +64,42 @@ func InsertBatch(ctx context.Context, conn clickhouse.Conn, events []models.Anal
 	return batch.Send()
 }
 
-func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*models.AnalyticsResponse, error) {
+func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string, start, end time.Time, interval string) (*models.AnalyticsResponse, error) {
 	var resp models.AnalyticsResponse
 
-	// 1. Total Clicks
-	err := conn.QueryRow(ctx, "SELECT count() FROM analytics WHERE code = ?", code).Scan(&resp.TotalClicks)
+	// Helper to get time function based on interval
+	var timeFunc string
+	switch interval {
+	case "minute":
+		timeFunc = "toStartOfMinute"
+	case "hour":
+		timeFunc = "toStartOfHour"
+	case "day":
+		timeFunc = "toStartOfDay"
+	case "week":
+		timeFunc = "toStartOfWeek"
+	case "month":
+		timeFunc = "toStartOfMonth"
+	case "year":
+		timeFunc = "toStartOfYear"
+	default:
+		timeFunc = "toStartOfHour"
+	}
+
+	// 1. Total Clicks (within range)
+	err := conn.QueryRow(ctx, "SELECT count() FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ?", code, start, end).Scan(&resp.TotalClicks)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Timeline (Last 24 hours by hour)
-	err = conn.Select(ctx, &resp.Timeline, `
-		SELECT toStartOfHour(created_at) as time, count() as count 
+	// 2. Timeline
+	query := `
+		SELECT ` + timeFunc + `(created_at) as time, count() as count 
 		FROM analytics 
-		WHERE code = ? AND created_at > now() - INTERVAL 24 HOUR
+		WHERE code = ? AND created_at BETWEEN ? AND ?
 		GROUP BY time ORDER BY time
-	`, code)
+	`
+	err = conn.Select(ctx, &resp.Timeline, query, code, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +107,8 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	// 3. Browsers
 	err = conn.Select(ctx, &resp.Browsers, `
 		SELECT browser as name, count() as count 
-		FROM analytics WHERE code = ? GROUP BY name ORDER BY count DESC
-	`, code)
+		FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+	`, code, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -96,8 +116,8 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	// 4. OS
 	err = conn.Select(ctx, &resp.OS, `
 		SELECT os as name, count() as count 
-		FROM analytics WHERE code = ? GROUP BY name ORDER BY count DESC
-	`, code)
+		FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+	`, code, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +125,8 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	// 5. Devices
 	err = conn.Select(ctx, &resp.Devices, `
 		SELECT device_type as name, count() as count 
-		FROM analytics WHERE code = ? GROUP BY name ORDER BY count DESC
-	`, code)
+		FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+	`, code, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +134,8 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	// 6. Countries
 	err = conn.Select(ctx, &resp.Countries, `
 		SELECT country as name, count() as count 
-		FROM analytics WHERE code = ? GROUP BY name ORDER BY count DESC
-	`, code)
+		FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+	`, code, start, end)
 	if err != nil {
 		return nil, err
 	}
@@ -123,8 +143,8 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string) (*mode
 	// 7. Referrers
 	err = conn.Select(ctx, &resp.Referrers, `
 		SELECT domain(referer) as name, count() as count 
-		FROM analytics WHERE code = ? AND referer != '' GROUP BY name ORDER BY count DESC
-	`, code)
+		FROM analytics WHERE code = ? AND referer != '' AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+	`, code, start, end)
 	if err != nil {
 		return nil, err
 	}

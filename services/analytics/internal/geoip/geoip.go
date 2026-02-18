@@ -1,35 +1,37 @@
 package geoip
 
 import (
+	"context"
 	"log/slog"
-	"net"
-	"path/filepath"
 	"sync"
+	"time"
 
-	"github.com/oschwald/geoip2-golang"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/wintkhantlin/url2short-ip2geo/gen"
 )
 
 var (
-	db   *geoip2.Reader
-	once sync.Once
+	client pb.Ip2GeoServiceClient
+	conn   *grpc.ClientConn
+	once   sync.Once
 )
 
-// Init initializes the GeoIP database.
-func Init(dbPath string) error {
+// Init initializes the GeoIP gRPC client.
+func Init(addr string) error {
 	var err error
 	once.Do(func() {
-		if dbPath == "" {
-			// Default path if not provided
-			dbPath = "GeoLite2-City.mmdb"
-		}
-		
-		absPath, _ := filepath.Abs(dbPath)
-		slog.Info("Loading GeoIP database", "path", absPath)
-		
-		db, err = geoip2.Open(dbPath)
+		slog.Info("Connecting to IP2Geo service", "addr", addr)
+
+		// Create a connection to the server
+		conn, err = grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
-			slog.Error("Failed to open GeoIP database", "error", err, "path", dbPath)
+			slog.Error("Failed to connect to IP2Geo service", "error", err, "addr", addr)
+			return
 		}
+
+		client = pb.NewIp2GeoServiceClient(conn)
 	})
 	return err
 }
@@ -42,37 +44,26 @@ func GetLocation(ip string) (string, string) {
 		return "internal", "internal"
 	}
 
-	if db == nil {
-		// If DB failed to load, return unknown
+	if client == nil {
 		return "unknown", "unknown"
 	}
 
-	parsedIP := net.ParseIP(ip)
-	if parsedIP == nil {
-		return "unknown", "unknown"
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-	record, err := db.City(parsedIP)
+	resp, err := client.Lookup(ctx, &pb.IpRequest{Ip: ip})
 	if err != nil {
+		// Log error but don't fail the request, just return unknown
+		slog.Debug("Failed to lookup IP", "ip", ip, "error", err)
 		return "unknown", "unknown"
 	}
 
-	country := record.Country.Names["en"]
-	if country == "" {
-		country = "unknown"
-	}
-
-	state := "unknown"
-	if len(record.Subdivisions) > 0 {
-		state = record.Subdivisions[0].Names["en"]
-	}
-
-	return country, state
+	return resp.Country, resp.State
 }
 
-// Close closes the GeoIP database.
+// Close closes the gRPC connection.
 func Close() {
-	if db != nil {
-		db.Close()
+	if conn != nil {
+		conn.Close()
 	}
 }

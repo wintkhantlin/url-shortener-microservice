@@ -15,6 +15,7 @@ import (
 	"github.com/wintkhantlin/url2short-analytics/internal/db"
 	"github.com/wintkhantlin/url2short-analytics/internal/geoip"
 	"github.com/wintkhantlin/url2short-analytics/internal/kafka"
+	"github.com/wintkhantlin/url2short-analytics/internal/parser"
 )
 
 func main() {
@@ -22,13 +23,18 @@ func main() {
 	validate := validator.New()
 
 	// 1. Initialize GeoIP
-	// Using a standard location in the container
-	if err := geoip.Init("/app/GeoLite2-City.mmdb"); err != nil {
+	if err := geoip.Init(cfg.IP2GeoAddr); err != nil {
 		slog.Warn("GeoIP initialization failed (continuing without it)", "error", err)
 	}
 	defer geoip.Close()
 
-	// 2. Connect to ClickHouse
+	// 2. Initialize UserAgent Parser
+	if err := parser.Init(cfg.UserAgentAddr); err != nil {
+		slog.Warn("UserAgent initialization failed (continuing without it)", "error", err)
+	}
+	defer parser.Close()
+
+	// 3. Connect to ClickHouse
 	var conn clickhouse.Conn
 	var err error
 	

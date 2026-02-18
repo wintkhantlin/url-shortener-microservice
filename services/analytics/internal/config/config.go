@@ -15,6 +15,8 @@ type Config struct {
 	KafkaGroupID       string
 	APIPort            string
 	ManagementURL      string
+	IP2GeoAddr         string
+	UserAgentAddr      string
 }
 
 func Load() *Config {
@@ -28,6 +30,8 @@ func Load() *Config {
 		KafkaGroupID:       getEnv("KAFKA_GROUP_ID", "analytics-group"),
 		APIPort:            getEnv("API_PORT", "8080"),
 		ManagementURL:      getEnv("MANAGEMENT_URL", "http://management:8001"),
+		IP2GeoAddr:         getEnv("IP2GEO_ADDR", "ip2geo:50051"),
+		UserAgentAddr:      getEnv("USER_AGENT_ADDR", "useragent:50052"),
 	}
 }
 
