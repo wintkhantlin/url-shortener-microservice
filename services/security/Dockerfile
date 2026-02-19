@@ -13,7 +13,8 @@ COPY pyproject.toml uv.lock ./
 # Use --frozen to ensure we use the lockfile exactly
 # Use --no-install-project to skip installing the project itself (we just want deps)
 # Use --no-dev to skip dev dependencies
-RUN uv sync --frozen --no-install-project --no-dev
+# Use --no-cache to avoid caching packages in the layer
+RUN uv sync --frozen --no-install-project --no-dev --no-cache
 
 FROM python:3.14-slim
 
