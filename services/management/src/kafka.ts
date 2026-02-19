@@ -2,9 +2,14 @@ import { Kafka, type Producer } from 'kafkajs';
 
 let producer: Producer | null = null;
 
+const brokers = process.env.KAFKA_BROKER ? [process.env.KAFKA_BROKER] : [];
+if (brokers.length === 0) {
+  throw new Error('KAFKA_BROKER environment variable is not defined');
+}
+
 const kafka = new Kafka({
   clientId: 'management-service',
-  brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+  brokers,
 });
 
 export async function getProducer(): Promise<Producer> {

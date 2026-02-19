@@ -3,9 +3,14 @@ import db from './db';
 import { alias } from './db/schema';
 import { eq } from 'drizzle-orm';
 
+const brokers = process.env.KAFKA_BROKER ? [process.env.KAFKA_BROKER] : [];
+if (brokers.length === 0) {
+  throw new Error('KAFKA_BROKER environment variable is not defined');
+}
+
 const kafka = new Kafka({
   clientId: 'management-worker',
-  brokers: [process.env.KAFKA_BROKER || 'localhost:9092'],
+  brokers,
 });
 
 const consumer = kafka.consumer({ groupId: 'management-alias-checked-group' });
