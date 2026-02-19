@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 
 detector = PhishingDetector()
 
-KAFKA_BROKERS = os.getenv("KAFKA_BROKERS", "127.0.0.1:9094")
+KAFKA_BROKERS = os.getenv("KAFKA_BROKERS")
+if not KAFKA_BROKERS:
+    raise ValueError("KAFKA_BROKERS environment variable is not set")
+
 INPUT_TOPIC = os.getenv("KAFKA_INPUT_TOPIC", "alias.created")
 OUTPUT_TOPIC = os.getenv("KAFKA_OUTPUT_TOPIC", "alias.checked")
 GROUP_ID = os.getenv("KAFKA_GROUP_ID", "alias-created-listener")
