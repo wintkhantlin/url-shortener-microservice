@@ -21,18 +21,26 @@ type Config struct {
 
 func Load() *Config {
 	return &Config{
-		ClickHouseAddr:     getEnv("CLICKHOUSE_ADDR", "clickhouse:9000"),
+		ClickHouseAddr:     mustGetEnv("CLICKHOUSE_ADDR"),
 		ClickHouseUser:     getEnv("CLICKHOUSE_USER", "default"),
 		ClickHousePassword: getEnv("CLICKHOUSE_PASSWORD", "default"),
 		ClickHouseDB:       getEnv("CLICKHOUSE_DB", "analytics_db"),
-		KafkaBrokers:       strings.Split(getEnv("KAFKA_BROKERS", "broker:9092"), ","),
+		KafkaBrokers:       strings.Split(mustGetEnv("KAFKA_BROKERS"), ","),
 		KafkaTopic:         getEnv("KAFKA_TOPIC", "analytics-event"),
 		KafkaGroupID:       getEnv("KAFKA_GROUP_ID", "analytics-group"),
 		APIPort:            getEnv("API_PORT", "8080"),
-		ManagementURL:      getEnv("MANAGEMENT_URL", "http://management:8001"),
-		IP2GeoAddr:         getEnv("IP2GEO_ADDR", "ip2geo:50051"),
-		UserAgentAddr:      getEnv("USER_AGENT_ADDR", "useragent:50052"),
+		ManagementURL:      mustGetEnv("MANAGEMENT_URL"),
+		IP2GeoAddr:         mustGetEnv("IP2GEO_ADDR"),
+		UserAgentAddr:      mustGetEnv("USER_AGENT_ADDR"),
 	}
+}
+
+func mustGetEnv(key string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		panic("environment variable " + key + " is not set")
+	}
+	return value
 }
 
 func getEnv(key, fallback string) string {

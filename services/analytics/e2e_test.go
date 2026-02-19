@@ -78,7 +78,7 @@ func TestAnalyticsE2E(t *testing.T) {
 
 	// 3. Send a message to Kafka
 	writer := &kafkago.Writer{
-		Addr:                   kafkago.TCP("localhost:9094"),
+		Addr:                   kafkago.TCP(cfg.KafkaBrokers[0]),
 		Topic:                  "analytics-event",
 		Balancer:               &kafkago.LeastBytes{},
 		AllowAutoTopicCreation: true,
