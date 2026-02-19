@@ -14,95 +14,75 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AliasesRouteImport } from './routes/aliases'
 import { Route as AliasIdRouteImport } from './routes/$aliasId'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthSettingsRouteImport } from './routes/auth/settings'
+import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as AuthLoginRouteImport } from './routes/auth/login'
 
-const AuthVerificationLazyRouteImport = createFileRoute('/auth/verification')()
-const AuthSettingsLazyRouteImport = createFileRoute('/auth/settings')()
-const AuthRegisterLazyRouteImport = createFileRoute('/auth/register')()
-const AuthRecoveryLazyRouteImport = createFileRoute('/auth/recovery')()
-const AuthLoginLazyRouteImport = createFileRoute('/auth/login')()
 const AuthErrorLazyRouteImport = createFileRoute('/auth/error')()
 
 const AliasesRoute = AliasesRouteImport.update({
   id: '/aliases',
   path: '/aliases',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/aliases.lazy').then((d) => d.Route))
 const AliasIdRoute = AliasIdRouteImport.update({
   id: '/$aliasId',
   path: '/$aliasId',
   getParentRoute: () => rootRouteImport,
-} as any)
+} as any).lazy(() => import('./routes/$aliasId.lazy').then((d) => d.Route))
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthVerificationLazyRoute = AuthVerificationLazyRouteImport.update({
-  id: '/auth/verification',
-  path: '/auth/verification',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() =>
-  import('./routes/auth/verification.lazy').then((d) => d.Route),
-)
-const AuthSettingsLazyRoute = AuthSettingsLazyRouteImport.update({
-  id: '/auth/settings',
-  path: '/auth/settings',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/auth/settings.lazy').then((d) => d.Route))
-const AuthRegisterLazyRoute = AuthRegisterLazyRouteImport.update({
-  id: '/auth/register',
-  path: '/auth/register',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/auth/register.lazy').then((d) => d.Route))
-const AuthRecoveryLazyRoute = AuthRecoveryLazyRouteImport.update({
-  id: '/auth/recovery',
-  path: '/auth/recovery',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/auth/recovery.lazy').then((d) => d.Route))
-const AuthLoginLazyRoute = AuthLoginLazyRouteImport.update({
-  id: '/auth/login',
-  path: '/auth/login',
-  getParentRoute: () => rootRouteImport,
-} as any).lazy(() => import('./routes/auth/login.lazy').then((d) => d.Route))
 const AuthErrorLazyRoute = AuthErrorLazyRouteImport.update({
   id: '/auth/error',
   path: '/auth/error',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/auth/error.lazy').then((d) => d.Route))
+const AuthSettingsRoute = AuthSettingsRouteImport.update({
+  id: '/auth/settings',
+  path: '/auth/settings',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/auth/settings.lazy').then((d) => d.Route))
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/auth/register',
+  path: '/auth/register',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/auth/register.lazy').then((d) => d.Route))
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any).lazy(() => import('./routes/auth/login.lazy').then((d) => d.Route))
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$aliasId': typeof AliasIdRoute
   '/aliases': typeof AliasesRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/settings': typeof AuthSettingsRoute
   '/auth/error': typeof AuthErrorLazyRoute
-  '/auth/login': typeof AuthLoginLazyRoute
-  '/auth/recovery': typeof AuthRecoveryLazyRoute
-  '/auth/register': typeof AuthRegisterLazyRoute
-  '/auth/settings': typeof AuthSettingsLazyRoute
-  '/auth/verification': typeof AuthVerificationLazyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$aliasId': typeof AliasIdRoute
   '/aliases': typeof AliasesRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/settings': typeof AuthSettingsRoute
   '/auth/error': typeof AuthErrorLazyRoute
-  '/auth/login': typeof AuthLoginLazyRoute
-  '/auth/recovery': typeof AuthRecoveryLazyRoute
-  '/auth/register': typeof AuthRegisterLazyRoute
-  '/auth/settings': typeof AuthSettingsLazyRoute
-  '/auth/verification': typeof AuthVerificationLazyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$aliasId': typeof AliasIdRoute
   '/aliases': typeof AliasesRoute
+  '/auth/login': typeof AuthLoginRoute
+  '/auth/register': typeof AuthRegisterRoute
+  '/auth/settings': typeof AuthSettingsRoute
   '/auth/error': typeof AuthErrorLazyRoute
-  '/auth/login': typeof AuthLoginLazyRoute
-  '/auth/recovery': typeof AuthRecoveryLazyRoute
-  '/auth/register': typeof AuthRegisterLazyRoute
-  '/auth/settings': typeof AuthSettingsLazyRoute
-  '/auth/verification': typeof AuthVerificationLazyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,46 +90,38 @@ export interface FileRouteTypes {
     | '/'
     | '/$aliasId'
     | '/aliases'
-    | '/auth/error'
     | '/auth/login'
-    | '/auth/recovery'
     | '/auth/register'
     | '/auth/settings'
-    | '/auth/verification'
+    | '/auth/error'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$aliasId'
     | '/aliases'
-    | '/auth/error'
     | '/auth/login'
-    | '/auth/recovery'
     | '/auth/register'
     | '/auth/settings'
-    | '/auth/verification'
+    | '/auth/error'
   id:
     | '__root__'
     | '/'
     | '/$aliasId'
     | '/aliases'
-    | '/auth/error'
     | '/auth/login'
-    | '/auth/recovery'
     | '/auth/register'
     | '/auth/settings'
-    | '/auth/verification'
+    | '/auth/error'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AliasIdRoute: typeof AliasIdRoute
   AliasesRoute: typeof AliasesRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
+  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthErrorLazyRoute: typeof AuthErrorLazyRoute
-  AuthLoginLazyRoute: typeof AuthLoginLazyRoute
-  AuthRecoveryLazyRoute: typeof AuthRecoveryLazyRoute
-  AuthRegisterLazyRoute: typeof AuthRegisterLazyRoute
-  AuthSettingsLazyRoute: typeof AuthSettingsLazyRoute
-  AuthVerificationLazyRoute: typeof AuthVerificationLazyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -175,46 +147,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/verification': {
-      id: '/auth/verification'
-      path: '/auth/verification'
-      fullPath: '/auth/verification'
-      preLoaderRoute: typeof AuthVerificationLazyRouteImport
+    '/auth/error': {
+      id: '/auth/error'
+      path: '/auth/error'
+      fullPath: '/auth/error'
+      preLoaderRoute: typeof AuthErrorLazyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/settings': {
       id: '/auth/settings'
       path: '/auth/settings'
       fullPath: '/auth/settings'
-      preLoaderRoute: typeof AuthSettingsLazyRouteImport
+      preLoaderRoute: typeof AuthSettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
       fullPath: '/auth/register'
-      preLoaderRoute: typeof AuthRegisterLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/recovery': {
-      id: '/auth/recovery'
-      path: '/auth/recovery'
-      fullPath: '/auth/recovery'
-      preLoaderRoute: typeof AuthRecoveryLazyRouteImport
+      preLoaderRoute: typeof AuthRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/login': {
       id: '/auth/login'
       path: '/auth/login'
       fullPath: '/auth/login'
-      preLoaderRoute: typeof AuthLoginLazyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/error': {
-      id: '/auth/error'
-      path: '/auth/error'
-      fullPath: '/auth/error'
-      preLoaderRoute: typeof AuthErrorLazyRouteImport
+      preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -224,12 +182,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AliasIdRoute: AliasIdRoute,
   AliasesRoute: AliasesRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
+  AuthSettingsRoute: AuthSettingsRoute,
   AuthErrorLazyRoute: AuthErrorLazyRoute,
-  AuthLoginLazyRoute: AuthLoginLazyRoute,
-  AuthRecoveryLazyRoute: AuthRecoveryLazyRoute,
-  AuthRegisterLazyRoute: AuthRegisterLazyRoute,
-  AuthSettingsLazyRoute: AuthSettingsLazyRoute,
-  AuthVerificationLazyRoute: AuthVerificationLazyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
