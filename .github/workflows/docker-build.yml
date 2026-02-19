@@ -12,16 +12,19 @@ jobs:
     
     strategy:
       matrix:
-        service: [management, redirect, analytics, web-ui]
+        service: [management, redirect, analytics, web-ui, security]
         include:
           - service: management
             context: ./services/management
           - service: redirect
             context: ./services/redirect
           - service: analytics
-            context: ./services/analytics
+            context: .
+            file: ./services/analytics/Dockerfile
           - service: web-ui
             context: ./web-ui
+          - service: security
+            context: ./services/security
 
     steps:
       - name: Checkout repository
@@ -34,6 +37,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
