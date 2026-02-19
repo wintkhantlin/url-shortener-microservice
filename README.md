@@ -24,10 +24,13 @@ We have broken things down into small, focused services so everything runs smoot
 
 Want to take it for a spin? It is easy.
 
+For a detailed guide on running the application locally or via Docker, please see [Running Instructions](docs/RUNNING.md).
+
 ### You Will Need
 *   Docker & Docker Compose (to run everything)
 *   Bun (if you want to hack on the TS code)
 *   Go (if you want to hack on the Analytics code)
+*   Python (if you want to hack on the Security code)
 
 ### Let's Run It!
 
@@ -37,15 +40,11 @@ Want to take it for a spin? It is easy.
     ```
     This might take a minute the first time as it downloads all the necessary parts.
 
-2.  **Set up the database:**
-    We need to tell ClickHouse how to store our data.
-    ```bash
-    # Run the SQL file located at: migrations/clickhouse/20250213_01.sql
-    # You can usually do this via a ClickHouse client or CLI
-    ```
+2.  **Access the Web UI:**
+    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 3.  **Create your first link:**
-    You can use the Web UI (running at `http://localhost:3000`) or hit the API directly.
+    Use the Web UI or hit the API directly.
 
 ## How it Works
 
