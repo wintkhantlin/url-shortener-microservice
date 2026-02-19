@@ -7,25 +7,37 @@ on:
     branches: [ main ]
 
 jobs:
-  build-analytics:
-    name: Build Analytics Service (Go)
+  build-go:
+    name: Build Go Service (${{ matrix.service }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [analytics, ip2geo, user-agent]
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
-          cache-dependency-path: services/analytics/go.sum
+          go-version: '1.25'
+          cache-dependency-path: services/${{ matrix.service }}/go.sum
 
       - name: Build
-        working-directory: services/analytics
+        working-directory: services/${{ matrix.service }}
         run: go build -v ./...
 
-  build-redirect:
-    name: Build Redirect Service (Bun)
+  build-bun:
+    name: Build Bun Service (${{ matrix.service }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: redirect
+            path: services/redirect
+          - service: management
+            path: services/management
+          - service: web-ui
+            path: web-ui
     steps:
       - uses: actions/checkout@v4
 
@@ -35,9 +47,32 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        working-directory: services/redirect
+        working-directory: ${{ matrix.path }}
         run: bun install --frozen-lockfile
 
       - name: Build Check
-        working-directory: services/redirect
-        run: bun build ./src/index.ts --outdir ./dist --target bun
+        working-directory: ${{ matrix.path }}
+        run: bun run build
+
+  build-python:
+    name: Build Python Service (security)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies
+        working-directory: services/security
+        run: uv sync --frozen
+
+      - name: Build/Check
+        working-directory: services/security
+        # Just verifying imports/syntax for now as there's no explicit build command
+        run: uv run python -m compileall .
