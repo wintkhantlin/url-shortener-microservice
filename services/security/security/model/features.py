@@ -2,51 +2,77 @@ import re
 import numpy as np
 import requests
 import tldextract
+import socket
 from urllib.parse import urlparse
+
+session = requests.Session()
+session.headers.update({"User-Agent": "Mozilla/5.0"})
+
+def is_ip(host):
+    try:
+        socket.inet_aton(host)
+        return 1
+    except:
+        return 0
 
 def extract_features(url):
     url = str(url).strip()
     features = []
-    
+
     try:
         parsed = urlparse(url)
         ext = tldextract.extract(url)
+        host = parsed.hostname or ""
         domain = f"{ext.domain}.{ext.suffix}"
-        
-        features.append(len(url))
-        features.append(len(domain))
-        features.append(1 if re.match(r'^\d{1,3}(\.\d{1,3}){3}$', ext.domain) else 0)
-        features.append(len(ext.suffix))
-        features.append(len(ext.subdomain.split('.')) if ext.subdomain else 0)
-        features.append(1 if parsed.scheme == 'https' else 0)
-        
-        features.append(sum(c.isalpha() for c in url) / len(url) if len(url) > 0 else 0)
-        features.append(sum(c.isdigit() for c in url) / len(url) if len(url) > 0 else 0)
-        features.append((len(url) - sum(c.isalnum() for c in url)) / len(url) if len(url) > 0 else 0)
-        
+
+        url_len = len(url)
+        domain_len = len(domain)
+        sub_count = len(ext.subdomain.split(".")) if ext.subdomain else 0
+        suffix_len = len(ext.suffix)
+
+        alpha_ratio = sum(c.isalpha() for c in url) / url_len if url_len else 0
+        digit_ratio = sum(c.isdigit() for c in url) / url_len if url_len else 0
+        special_ratio = (url_len - sum(c.isalnum() for c in url)) / url_len if url_len else 0
+
+        features += [
+            url_len,
+            domain_len,
+            is_ip(host),
+            suffix_len,
+            sub_count,
+            1 if parsed.scheme == "https" else 0,
+            alpha_ratio,
+            digit_ratio,
+            special_ratio
+        ]
+
         try:
-            resp = requests.get(url, timeout=3, verify=False)
-            content = resp.text.lower()
-            
-            features.append(0)
-            features.append(1 if '<title>' in content else 0)
-            features.append(1 if 'favicon' in content else 0)
-            features.append(1 if 'type="password"' in content else 0)
-            features.append(1 if 'type="submit"' in content else 0)
-            features.append(1 if '<iframe' in content else 0)
-            features.append(len(content.splitlines()))
-            
+            r = session.get(url, timeout=2, allow_redirects=True)
+            html = r.text.lower()
+
+            redirect_count = len(r.history)
+            has_title = 1 if "<title>" in html else 0
+            has_favicon = 1 if "favicon" in html else 0
+            has_password = 1 if 'type="password"' in html else 0
+            has_submit = 1 if 'type="submit"' in html else 0
+            has_iframe = 1 if "<iframe" in html else 0
+            line_count = html.count("\n")
+
+            features += [
+                0,
+                redirect_count,
+                has_title,
+                has_favicon,
+                has_password,
+                has_submit,
+                has_iframe,
+                line_count
+            ]
+
         except:
-            features.append(1)
-            features.append(0)
-            features.append(0)
-            features.append(0)
-            features.append(0)
-            features.append(0)
-            features.append(0)
-            
-    except Exception as e:
-        print(f"Error extracting features: {e}")
-        return np.zeros((1, 16), dtype=np.float32)
-        
+            features += [1,0,0,0,0,0,0,0]
+
+    except:
+        return np.zeros((1, 17), dtype=np.float32)
+
     return np.array([features], dtype=np.float32)
