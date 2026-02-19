@@ -11,33 +11,12 @@ This is the data cruncher. The **Analytics Service** sits quietly in the backgro
 
 ## Tech Stack
 
-*   **Language:** Go (Golang) 1.25+
+*   **Language:** Go (Golang) 1.22+
 *   **Web Framework:** Gin
 *   **Database:** ClickHouse (via native protocol)
 *   **Messaging:** Kafka (Consumer)
 
 ## Running Locally
-
-### Prerequisites
-
-*   Go 1.25+
-*   Docker & Docker Compose
-
-### Using Docker (Recommended)
-
-To build the image, you must run the command from the **project root directory**:
-
-```bash
-docker build -f services/analytics/Dockerfile -t url2short-analytics .
-```
-
-Or using Docker Compose:
-
-```bash
-docker-compose up --build analytics
-```
-
-### Manual Run
 
 1.  **Get dependencies:**
     ```bash
