@@ -12,6 +12,7 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch src/index.ts",
+    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
     "test": "bun test"
   },
   "type": "module",
