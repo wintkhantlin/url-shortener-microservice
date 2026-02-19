@@ -24,7 +24,6 @@ import { Label as UILabel } from "@/components/ui/label"
 
 // Hooks & Libs
 import { useAliases } from '@/hooks/useAliases'
-import type { AnalyticsResponse } from './$aliasId'
 
 // Lazy Load Charts
 const TrafficChart = lazy(() => import('@/components/charts/TrafficChart'))
@@ -239,7 +238,7 @@ function DistributionCard({ title, subtitle, data }: { title: string, subtitle: 
 function DashboardRoute() {
     const { aliasId } = Route.useParams();
     const { interval } = Route.useSearch();
-    const { data: aliases, isLoading: isLoadingAliases, error: aliasesError } = useAliases();
+    const { data: aliases } = useAliases();
     const { alias, analytics, error: loaderError } = Route.useLoaderData();
 
     const timelineData = useMemo(() => {
