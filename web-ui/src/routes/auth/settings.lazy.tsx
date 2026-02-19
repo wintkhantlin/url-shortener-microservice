@@ -1,6 +1,5 @@
 import { createLazyFileRoute, Link } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
+import { revalidateLogic, useForm } from '@tanstack/react-form'
 import { z } from 'zod'
 import { useState } from 'react'
 import { type SettingsFlow, type UpdateSettingsFlowBody, type UiNodeInputAttributes, type UiNode } from '@ory/client'
@@ -16,8 +15,8 @@ export const Route = createLazyFileRoute('/auth/settings')({
 })
 
 const profileSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters").optional(),
-  email: z.string().email("Please enter a valid email").optional(),
+  name: z.string().min(3, "Name must be at least 3 characters").or(z.literal('')),
+  email: z.email("Please enter a valid email").or(z.literal('')),
 })
 
 const passwordSchema = z.object({
@@ -34,10 +33,9 @@ function Settings() {
       name: '',
       email: '',
     },
-    // @ts-expect-error: validatorAdapter type mismatch with zodValidator in current version
-    validatorAdapter: zodValidator(),
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: profileSchema,
+      onDynamic: profileSchema,
     },
     onSubmit: async ({ value }) => {
       if (!flow) return
@@ -74,10 +72,9 @@ function Settings() {
     defaultValues: {
       password: '',
     },
-    // @ts-expect-error: validatorAdapter type mismatch with zodValidator in current version
-    validatorAdapter: zodValidator(),
+    validationLogic: revalidateLogic(),
     validators: {
-      onChange: passwordSchema,
+      onDynamic: passwordSchema,
     },
     onSubmit: async ({ value }) => {
       if (!flow) return
