@@ -1,10 +1,11 @@
+import os
 import asyncio
 import aiohttp
 from faker import Faker
 
-URL = "http://localhost:3001/pkqR08"
-CONCURRENCY = 200
-REQUESTS = 10000
+URL = os.getenv("TARGET_URL", "http://localhost:3001/pkqR08")
+CONCURRENCY = int(os.getenv("CONCURRENCY", 200))
+REQUESTS = int(os.getenv("REQUESTS", 10000))
 
 fake = Faker()
 
