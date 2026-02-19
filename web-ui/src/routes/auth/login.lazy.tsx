@@ -1,7 +1,7 @@
-import { createLazyFileRoute, Link, useNavigate, useSearch } from '@tanstack/react-router'
+import { createLazyFileRoute, Link } from '@tanstack/react-router'
 import { revalidateLogic, useForm } from '@tanstack/react-form'
 import { z } from 'zod'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { type LoginFlow, type UpdateLoginFlowBody, type UiNodeInputAttributes, type UiNode, type UiText } from '@ory/client'
 import { kratos } from '@/lib/kratos'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,6 @@ const loginFormSchema = z.object({
 })
 
 function Login() {
-    const navigate = useNavigate()
     const data = LoginRoute.useLoaderData() as { flow?: LoginFlow }
     const initialFlow = data?.flow
     const [flow, setFlow] = useState<LoginFlow | null>(initialFlow || null)
@@ -114,7 +113,6 @@ function Login() {
                                 <Field>
                                     <div className="flex items-center justify-between">
                                         <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                                        <Link to="/auth/recovery" className="text-sm underline">Forgot password?</Link>
                                     </div>
                                     <Input
                                         id={field.name}
