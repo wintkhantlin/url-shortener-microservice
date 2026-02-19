@@ -13,7 +13,10 @@ export interface Alias {
 export const aliasesQueryOptions = () => queryOptions({
     queryKey: ["aliases"],
     queryFn: async (): Promise<Alias[]> => {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4455/api"}/management/aliases`, {
+        const baseUrl = import.meta.env.APP_API_BASE_URL;
+        if (!baseUrl) throw new Error("APP_API_BASE_URL is not defined");
+        
+        const res = await fetch(`${baseUrl}/management/aliases`, {
             credentials: "include"
         });
         if (!res.ok) {
@@ -31,7 +34,10 @@ export function useCreateAlias() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (data: { target: string; code?: string; expires_at?: string }) => {
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4455/api"}/management/aliases`, {
+            const baseUrl = import.meta.env.APP_API_BASE_URL;
+            if (!baseUrl) throw new Error("APP_API_BASE_URL is not defined");
+
+            const res = await fetch(`${baseUrl}/management/aliases`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -55,7 +61,10 @@ export function useDeleteAlias() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async (code: string) => {
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4455/api"}/management/aliases/${code}`, {
+            const baseUrl = import.meta.env.APP_API_BASE_URL;
+            if (!baseUrl) throw new Error("APP_API_BASE_URL is not defined");
+
+            const res = await fetch(`${baseUrl}/management/aliases/${code}`, {
                 method: "DELETE",
                 credentials: "include"
             });
@@ -75,7 +84,10 @@ export function useUpdateAlias() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: async ({ code, ...data }: Partial<Alias> & { code: string }) => {
-            const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:4455/api"}/management/aliases/${code}`, {
+            const baseUrl = import.meta.env.APP_API_BASE_URL;
+            if (!baseUrl) throw new Error("APP_API_BASE_URL is not defined");
+
+            const res = await fetch(`${baseUrl}/management/aliases/${code}`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

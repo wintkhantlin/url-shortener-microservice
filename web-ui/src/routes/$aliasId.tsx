@@ -24,7 +24,9 @@ export const Route = createFileRoute('/$aliasId')({
     loader: async (ctx) => {
         const { aliasId } = ctx.params;
         const { interval, start, end } = ctx.deps;
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:4455/api";
+        const baseUrl = import.meta.env.APP_API_BASE_URL;
+        
+        if (!baseUrl) throw new Error("APP_API_BASE_URL is not defined");
 
         try {
             // Initiate both fetches in parallel

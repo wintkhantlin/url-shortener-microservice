@@ -162,7 +162,9 @@ function MetricCard({ title, value, icon }: { title: string, value: string | num
 }
 
 function CopyShortUrl({ code }: { code: string }) {
-    const base = (import.meta.env.VITE_REDIRECT_BASE_URL as string | undefined) || "http://localhost:3001/";
+    const base = import.meta.env.APP_REDIRECT_BASE_URL;
+    if (!base) throw new Error("APP_REDIRECT_BASE_URL is not defined");
+    
     const url = `${base.replace(/\/$/, '')}/${code}`;
     const [copied, setCopied] = useState(false);
 
