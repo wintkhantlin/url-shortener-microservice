@@ -26,7 +26,6 @@ services:
     command: serve -c /etc/config/kratos/kratos.yml --dev
     networks:
       - intranet
-
   management-db:
     image: postgres:18-alpine
     environment:
@@ -169,14 +168,12 @@ services:
       - CLICKHOUSE_DB=analytics_db
       - IP2GEO_ADDR=ip2geo:50051
       - USER_AGENT_ADDR=useragent:50052
+      - MANAGEMENT_URL=http://management:8001
     depends_on:
       - clickhouse
       - broker
       - ip2geo
       - useragent
-    deploy:
-      mode: replicated
-      replicas: 10
     networks:
       - intranet
 
