@@ -15,6 +15,21 @@ export const Route = createLazyFileRoute('/auth/register')({
   component: Register,
 })
 
+type RegistrationFlowError = {
+  response?: {
+    status?: number
+    data?: RegistrationFlow
+  }
+}
+
+function isRegistrationFlowError(error: unknown): error is RegistrationFlowError {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return false
+  }
+  const response = (error as RegistrationFlowError).response
+  return typeof response?.status === 'number'
+}
+
 const registerSchema = z.object({
   name: z.string().min(3, "Full name must be at least 3 characters"),
   email: z.string().email("Please enter a valid email"),
@@ -60,8 +75,8 @@ function Register() {
         
         window.location.href = '/'
       } catch (err: unknown) {
-          if ((err as any).response?.status === 400) {
-              setFlow((err as any).response.data)
+          if (isRegistrationFlowError(err) && err.response?.status === 400 && err.response.data) {
+              setFlow(err.response.data)
           }
           console.error(err)
       }

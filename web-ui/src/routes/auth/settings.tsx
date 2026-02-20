@@ -2,6 +2,20 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { z } from 'zod'
 import { kratos } from '@/lib/kratos'
 
+type KratosSettingsError = {
+  response?: {
+    status?: number
+  }
+}
+
+function isUnauthorizedError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return false
+  }
+  const response = (error as KratosSettingsError).response
+  return response?.status === 401
+}
+
 const settingsSearchSchema = z.object({
     flow: z.string().optional(),
     return_to: z.string().optional(),
@@ -15,24 +29,19 @@ export const Route = createFileRoute('/auth/settings')({
             if (flow) {
                 const { data } = await kratos.getSettingsFlow({ id: flow })
                 return { flow: data }
-            } else {
-                const { data } = await kratos.createBrowserSettingsFlow({
-                    returnTo: return_to,
-                })
-                return { flow: data }
             }
-        } catch (err: any) {
-             if (err.response?.status === 401) {
+            const { data } = await kratos.createBrowserSettingsFlow({
+                returnTo: return_to,
+            })
+            return { flow: data }
+        } catch (err: unknown) {
+            if (isUnauthorizedError(err)) {
                 throw redirect({ to: '/auth/login' })
             }
-            try {
-                const { data } = await kratos.createBrowserSettingsFlow({
-                    returnTo: return_to,
-                })
-                return { flow: data }
-            } catch (e) {
-                throw e
-            }
+            const { data } = await kratos.createBrowserSettingsFlow({
+                returnTo: return_to,
+            })
+            return { flow: data }
         }
     },
 })

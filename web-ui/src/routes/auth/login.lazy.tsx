@@ -14,6 +14,21 @@ export const Route = createLazyFileRoute('/auth/login')({
     component: Login,
 })
 
+type LoginFlowError = {
+    response?: {
+        status?: number
+        data?: LoginFlow
+    }
+}
+
+function isLoginFlowError(error: unknown): error is LoginFlowError {
+    if (typeof error !== 'object' || error === null || !('response' in error)) {
+        return false
+    }
+    const response = (error as LoginFlowError).response
+    return typeof response?.status === 'number'
+}
+
 const loginFormSchema = z.object({
     identifier: z.email("Please enter a valid email"),
     password: z.string().min(1, "Password is required"),
@@ -54,8 +69,8 @@ function Login() {
 
                 window.location.href = '/'
             } catch (err: unknown) {
-                if ((err as any).response?.status === 400) {
-                    setFlow((err as any).response.data)
+                if (isLoginFlowError(err) && err.response?.status === 400 && err.response.data) {
+                    setFlow(err.response.data)
                 }
                 console.error(err)
             }

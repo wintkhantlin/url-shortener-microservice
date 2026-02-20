@@ -14,6 +14,21 @@ export const Route = createLazyFileRoute('/auth/settings')({
   component: Settings,
 })
 
+type SettingsFlowError = {
+  response?: {
+    status?: number
+    data?: SettingsFlow
+  }
+}
+
+function isSettingsFlowError(error: unknown): error is SettingsFlowError {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return false
+  }
+  const response = (error as SettingsFlowError).response
+  return typeof response?.status === 'number'
+}
+
 const profileSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").or(z.literal('')),
   email: z.email("Please enter a valid email").or(z.literal('')),
@@ -60,8 +75,8 @@ function Settings() {
         
         setFlow(data)
       } catch (err: unknown) {
-          if ((err as any).response?.status === 400) {
-              setFlow((err as any).response.data)
+          if (isSettingsFlowError(err) && err.response?.status === 400 && err.response.data) {
+              setFlow(err.response.data)
           }
           console.error(err)
       }
@@ -96,8 +111,8 @@ function Settings() {
         
         setFlow(data)
       } catch (err: unknown) {
-          if ((err as any).response?.status === 400) {
-              setFlow((err as any).response.data)
+          if (isSettingsFlowError(err) && err.response?.status === 400 && err.response.data) {
+              setFlow(err.response.data)
           }
           console.error(err)
       }
