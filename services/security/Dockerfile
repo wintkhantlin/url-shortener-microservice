@@ -6,14 +6,8 @@ WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1
 ENV UV_LINK_MODE=copy
 
-# Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies
-# Use --frozen to ensure we use the lockfile exactly
-# Use --no-install-project to skip installing the project itself (we just want deps)
-# Use --no-dev to skip dev dependencies
-# Use --no-cache to avoid caching packages in the layer
 RUN uv sync --frozen --no-install-project --no-dev --no-cache
 
 FROM python:3.14-slim
