@@ -124,11 +124,26 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string, start,
 
 	// 5. Devices
 	err = conn.Select(ctx, &resp.Devices, `
-		SELECT device_type as name, count() as count 
-		FROM analytics WHERE code = ? AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+		SELECT
+			multiIf(device_type IN ('phone','mobile','iphone','android','ipad','tablet'), 'mobile', 'desktop') as name,
+			count() as count
+		FROM analytics
+		WHERE code = ? AND created_at BETWEEN ? AND ?
+		GROUP BY name
+		ORDER BY count DESC
 	`, code, start, end)
 	if err != nil {
 		return nil, err
+	}
+
+	// Always return both buckets for a stable UI.
+	deviceCounts := map[string]uint64{}
+	for _, item := range resp.Devices {
+		deviceCounts[item.Name] = item.Count
+	}
+	resp.Devices = []models.DimensionSummary{
+		{Name: "mobile", Count: deviceCounts["mobile"]},
+		{Name: "desktop", Count: deviceCounts["desktop"]},
 	}
 
 	// 6. Countries
@@ -143,7 +158,15 @@ func GetAnalytics(ctx context.Context, conn clickhouse.Conn, code string, start,
 	// 7. Referrers
 	err = conn.Select(ctx, &resp.Referrers, `
 		SELECT domain(referer) as name, count() as count 
-		FROM analytics WHERE code = ? AND referer != '' AND created_at BETWEEN ? AND ? GROUP BY name ORDER BY count DESC LIMIT 10
+		FROM analytics 
+		WHERE code = ?
+		  AND created_at BETWEEN ? AND ?
+		  AND referer != ''
+		  AND lowerUTF8(trim(referer)) NOT IN ('null','-','(null)','about:blank')
+		  AND domain(referer) != ''
+		GROUP BY name
+		ORDER BY count DESC
+		LIMIT 10
 	`, code, start, end)
 	if err != nil {
 		return nil, err

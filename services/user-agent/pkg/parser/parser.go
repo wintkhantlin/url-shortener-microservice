@@ -16,7 +16,6 @@ type UserAgentInfo struct {
 	Device  string
 }
 
-// ParseUserAgent parses the user agent string and returns browser, OS, and device information.
 func ParseUserAgent(userAgent string) UserAgentInfo {
 	if userAgent == "" {
 		return UserAgentInfo{
@@ -27,16 +26,22 @@ func ParseUserAgent(userAgent string) UserAgentInfo {
 	}
 
 	client := parser.Parse(userAgent)
-	
+
 	info := UserAgentInfo{
 		Browser: client.UserAgent.Family,
 		OS:      client.Os.Family,
 		Device:  client.Device.Family,
 	}
 
-	if info.Browser == "" { info.Browser = "unknown" }
-	if info.OS == "" { info.OS = "unknown" }
-	if info.Device == "" { info.Device = "unknown" }
+	if info.Browser == "" {
+		info.Browser = "unknown"
+	}
+	if info.OS == "" {
+		info.OS = "unknown"
+	}
+	if info.Device == "" {
+		info.Device = "unknown"
+	}
 
 	return info
 }

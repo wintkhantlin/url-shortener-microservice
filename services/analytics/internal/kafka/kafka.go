@@ -104,12 +104,14 @@ func StartConsumer(ctx context.Context, conn clickhouse.Conn, validate *validato
 				event.State = "unknown"
 			}
 
+			// Normalize before validation so whitespace and raw device strings don't slip through.
+			event.Transform()
+
 			if err := validate.Struct(event); err != nil {
 				slog.Error("Validation failed for event", "error", err)
 				continue
 			}
 
-			event.Transform()
 			batch = append(batch, event)
 
 			if len(batch) >= batchSize {

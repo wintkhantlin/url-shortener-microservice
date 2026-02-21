@@ -1,12 +1,38 @@
 package parser
 
 import (
+	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+
+	pb "github.com/wintkhantlin/url2short-useragent/gen"
 )
 
+type fakeUserAgentClient struct{}
+
+func (fakeUserAgentClient) Parse(ctx context.Context, in *pb.UserAgentRequest, opts ...grpc.CallOption) (*pb.UserAgentResponse, error) {
+	ua := in.GetUserAgent()
+
+	switch {
+	case strings.Contains(ua, "Chrome/120.0.0.0") && strings.Contains(ua, "Mac OS X"):
+		return &pb.UserAgentResponse{Browser: "Chrome", Os: "Mac OS X", Device: "Mac"}, nil
+	case strings.Contains(ua, "Firefox/119.0") && strings.Contains(ua, "Windows NT 10.0"):
+		return &pb.UserAgentResponse{Browser: "Firefox", Os: "Windows", Device: "Other"}, nil
+	case strings.Contains(ua, "iPhone") && strings.Contains(ua, "Mobile/") && strings.Contains(ua, "Safari/"):
+		return &pb.UserAgentResponse{Browser: "Mobile Safari", Os: "iOS", Device: "iPhone"}, nil
+	default:
+		return &pb.UserAgentResponse{Browser: "unknown", Os: "unknown", Device: "unknown"}, nil
+	}
+}
+
 func TestParseUserAgent(t *testing.T) {
+	prev := client
+	client = fakeUserAgentClient{}
+	t.Cleanup(func() { client = prev })
+
 	tests := []struct {
 		name      string
 		userAgent string
